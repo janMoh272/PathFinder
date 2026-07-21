@@ -95,8 +95,7 @@ class UserAnswerController extends Controller
                  $path=Path::where('name','reflective')->first();
 
                  $pathfinder=$path->id;
-                //return response()->json(['midTime'=>$midTime,'midErr'=>$midErr,'path'=>$path, 'pathfinder'=>$pathfinder,], 200);
-                //  $impulsivity_score=null;
+             
                }else{
                 $path=Path::where('name','impulsive')->first();
                  $pathfinder=$path->id;
