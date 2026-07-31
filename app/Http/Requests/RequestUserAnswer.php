@@ -12,7 +12,7 @@ class RequestUserAnswer extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,25 @@ class RequestUserAnswer extends FormRequest
     public function rules(): array
     {
         return [
-            //
+                            'test_id'=>'required|exists:tests,id',
+                            'question_id'=>'required|exists:questions,id',
+                            'time_spent'=>'required',
+                            'answer'=>'required',
         ];
     }
+
+public function messages()
+{
+    return
+    [
+                'test_id.required'=> 'هذا الحقل مطلوب'  ,
+                'question_id.required'=> 'هذا الحقل مطلوب'  ,
+                'time_spent.required'=> 'هذا الحقل مطلوب'  ,
+                'answer.required'=> 'هذا الحقل مطلوب'  ,
+                
+               
+
+    ];
+}
+
 }

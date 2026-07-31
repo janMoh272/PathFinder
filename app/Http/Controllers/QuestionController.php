@@ -18,6 +18,7 @@ class QuestionController extends Controller
        // $image_url= $question->text; can't use this for alot of info
       // return  response()->json(['data'=>$question], 200);
         return response()->json([
+            //
             'data'=>$question->map(function($q) {
                      return[
                         'id'=>$q->id,

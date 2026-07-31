@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RequestUserAnswer;
 use App\Models\Path;
 use App\Models\question;
 use App\Models\test;
@@ -32,19 +33,16 @@ class UserAnswerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(RequestUserAnswer $request)
     {
            $user=Auth::user();
-                $total_score=0;
+                $total_score=0; 
                 $total_errors=0;
                 $total_time=0;
                 $questionLimit=\Illuminate\Support\Env::get('TEST_QUESTION_LIMIT',3);
-           $data= $request->validate([
-                            'test_id'=>'exists:tests,id',
-                            'question_id'=>'exists:questions,id',
-                            'time_spent'=>'required',
-                            'answer'=>'required',
-                        ]);
+             
+           $data=$request->validated();
+  
            $CheckQuestion=question::find($data['question_id']);
              if(!$CheckQuestion) {
                 return response()->json(['message'=>'not Found Question'], 404);}
@@ -69,9 +67,13 @@ class UserAnswerController extends Controller
 
 
     if($test->current_question_index == $questionLimit){
+     
+       //get the total of speeding time///////////////////////////////////
        $total_time=user_answer::where('test_id',$test->id)->sum('time_spent');
+       //get the total of correct answers//////////////////////
        $total_score=user_answer::where('test_id',$test->id)
                                 ->where('is_correct',1)->count();
+        //get the total of wrong answers////////////////////////////////////////
        $total_errors=user_answer::where('test_id',$test->id)
                                 ->where('is_correct',0)->count();
 
@@ -80,29 +82,35 @@ class UserAnswerController extends Controller
                                     'total_score'=>$total_score,
                                     'total_errors'=>$total_errors,
                                     'total_time'=>$total_time,
+                                    'completed_at'=>now(),
                                     
                                 ]);
-      $pathfinder=null;
-       $impulsivity_score=null;
- $midTime=(float)test::where('user_id',$user->id)
-                ->where('status','completed')
-                 ->avg('total_time');
- $midErr=(float)test::where('user_id',$user->id)
-               ->where('status','completed')
-               ->avg('total_errors');
 
-               if($total_time < $midTime && $total_errors < $midErr){
-                 $path=Path::where('name','reflective')->first();
+ //start select the path for user      ////////////////////////////////////////
+$pathfinder=null;
+$impulsivity_score=null;
 
-                 $pathfinder=$path->id;
-             
-               }else{
-                $path=Path::where('name','impulsive')->first();
-                 $pathfinder=$path->id;
-            //return response()->json(['midTime'=>$midTime,'midErr'=>$midErr,'path'=>$path, 'pathfinder'=>$pathfinder,], 200);
-                  
-               }
-      $user_profile=user_profile::create([
+   //get the defult time for each question     ///////////////////////////////
+   if($test->status=='completed'){
+           $questionTime=test_details::where('test_id',$test->id)
+                                         ->with('question')
+                                         ->get();
+       $questionTotal=test_details::where('test_id',$test->id)->count();                             
+        $questionTimeAvr=$questionTime->avg('time_limit') ;
+        $questionErrAvr=$questionTotal*0.25;
+
+
+        if($total_time <= $questionTimeAvr && $total_errors <=$questionErrAvr){
+                 $reflective=Path::where('name','reflective')->first();
+                 $pathfinder=$reflective->id;
+        }
+
+         if($total_time > $questionTimeAvr && ($total_errors > $questionErrAvr||$total_errors <= $questionErrAvr)){
+             $impulsive=Path::where('name','impulsive')->first();
+             $pathfinder=$impulsive->id;
+
+        }
+     $user_profile=user_profile::create([
                 'user_id'=>$user->id,
                 'path_id'=> $pathfinder,
                 'impulsivity_score'=>$impulsivity_score ,
@@ -111,7 +119,9 @@ class UserAnswerController extends Controller
                 'classified_at'=>now(),
        ]);
      return response()->json(['data'=>$test,'status'=>'completed','user_profile'=>$user_profile,
-     'midTime'=>$midTime,'midErr'=>$midErr,'path'=>$path, 'pathfinder'=>$pathfinder,], 200);
+      'pathfinder'=>$pathfinder,], 200);
+   }
+
 
 
     }

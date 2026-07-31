@@ -12,29 +12,27 @@ Route::post('register',[AuthController::class,'register']);
 Route::post('login',[AuthController::class,'login']);
 
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
 
 
 
 
-Route::middleware('auth:sanctum')->group(function(){
+
+Route::middleware(['auth:sanctum','student'])->group(function(){
 Route::post('logout',[AuthController::class,'logout']);
-
 Route::apiResource('test',TestController::class);
 Route::apiResource('useranswer',UserAnswerController::class);
-//Route::get('test',[TestController::class, 'index']);
+
 });
 
 
 
+Route::middleware(['auth:sanctum','admin'])->group(function () {
+ Route::get('path',[PathController::class,'getpath']);
+ Route::apiResource('questions',QuestionController::class);   
+});
 
 
 
-Route::get('path',[PathController::class,'getpath']);
-
-Route::apiResource('questions',QuestionController::class);
 
 
 
